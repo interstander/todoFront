@@ -1,14 +1,19 @@
-import { useState } from 'react'
-import { useSelector, useDispatch } from 'react-redux'
+import { useEffect, useState } from 'react'
+import { useSelector } from 'react-redux'
 import type { RootState } from './store/store'
-import { addTodo, toggleTodo, deleteTodo } from './store/todoSlice'
+import { fetchTodos, addTodo, toggleTodo } from './store/todoSlice'
+import { useAppDispatch } from './hooks'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import './App.css'
 
 function App() {
   const [inputText, setInputText] = useState('');
-  const todos = useSelector((state: RootState) => state.todos.todos);
-  const dispatch = useDispatch();
+  const { todos, loading, error } = useSelector((state: RootState) => state.todos);
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    dispatch(fetchTodos());
+  }, [dispatch]);
 
   const handleAddTodo = () => {
     if (inputText.trim() !== '') {
@@ -19,10 +24,6 @@ function App() {
 
   const handleToggleTodo = (id: number) => {
     dispatch(toggleTodo(id));
-  };
-
-  const handleDeleteTodo = (id: number) => {
-    dispatch(deleteTodo(id));
   };
 
   return (
@@ -43,8 +44,10 @@ function App() {
               추가
             </button>
           </div>
+          {loading && <div className="text-center text-muted py-3">로딩 중...</div>}
+          {error && <div className="text-center text-danger py-3">{error}</div>}
           <div className="list-group">
-            {todos.length === 0 ? (
+            {todos.length === 0 && !loading ? (
               <div className="text-center text-muted py-5">할 일을 추가해보세요!</div>
             ) : (
               todos.map(todo => (
@@ -61,18 +64,15 @@ function App() {
                         textDecoration: todo.completed ? 'line-through' : 'none'
                       }}
                     >
-                      {todo.text}
+                      {todo.title}
                     </span>
                     <small className="text-muted mt-1">
-                      생성: {todo.createdAt}
+                      생성: {todo.created_at}
+                      {todo.completed && todo.completed_at && (
+                        <> / 완료: {todo.completed_at}</>
+                      )}
                     </small>
                   </div>
-                  <button
-                    className="btn btn-danger btn-sm ms-3"
-                    onClick={() => handleDeleteTodo(todo.id)}
-                  >
-                    삭제
-                  </button>
                 </div>
               ))
             )}
